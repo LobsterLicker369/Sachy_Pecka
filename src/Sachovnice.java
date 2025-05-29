@@ -21,6 +21,15 @@ public class Sachovnice {
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
             frame.setResizable(false);
+
+            // Vytvori panel napravo s logem a timerem pod sebou
+            JPanel rightPanel = new JPanel(new BorderLayout());
+            rightPanel.add(gameLog, BorderLayout.CENTER);
+            rightPanel.add(new Timer(), BorderLayout.SOUTH);
+
+            // Nahradi gameLog v hlavnim panelu pravym panelem
+            panel.remove(gameLog);
+            panel.add(rightPanel, BorderLayout.EAST);
         });
     }
 }
