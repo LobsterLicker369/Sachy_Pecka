@@ -19,8 +19,10 @@ public class ChessBoardPanel extends JPanel {
     private boolean whiteToMove = true;
     private int enPassantRow = -1;
     private int enPassantCol = -1;
+    private GameLog gameLog;
 
-    public ChessBoardPanel() {
+    public ChessBoardPanel(GameLog gameLog) {
+        this.gameLog = gameLog;
         setLayout(new GridLayout(rows, cols));
         initBoard();
         drawBoard();
@@ -200,12 +202,18 @@ public class ChessBoardPanel extends JPanel {
     private void makeMove(int fromRow, int fromCol, int toRow, int toCol) {
         String movingPiece = board[fromRow][fromCol];
 
+        // Zachytime co tam bylo drive, nez se to prepise
+        String capturedPiece = board[toRow][toCol];
+
         if (movingPiece.equalsIgnoreCase("p")) {
             if (toRow == enPassantRow && toCol == enPassantCol) {
-                if (movingPiece.equals("P"))
+                if (movingPiece.equals("P")) {
+                    capturedPiece = board[toRow + 1][toCol];
                     board[toRow + 1][toCol] = null;
-                else
+                } else {
+                    capturedPiece = board[toRow - 1][toCol];
                     board[toRow - 1][toCol] = null;
+                }
             }
         }
 
@@ -222,7 +230,12 @@ public class ChessBoardPanel extends JPanel {
 
         board[toRow][toCol] = movingPiece;
         board[fromRow][fromCol] = null;
+
+        if (gameLog != null) {
+            gameLog.registerMove(fromRow, fromCol, toRow, toCol, movingPiece, capturedPiece, board, whiteToMove);
+        }
     }
+
 
     // Provadi promocni volbu pesce
     private void promotePawn(int row, int col, boolean white) {
@@ -255,6 +268,7 @@ public class ChessBoardPanel extends JPanel {
         SpecialMoves special = new SpecialMoves(board, whiteToMove, enPassantRow, enPassantCol);
         return special.getLegalMoves(row, col);
     }
+
 
     // Kontroluje jestli hra skoncila s matem nebo patem
     private void checkEndGame() {

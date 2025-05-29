@@ -236,7 +236,6 @@ public class SpecialMoves {
         return piece.equals(piece.toUpperCase());
     }
 
-
     // Vraci true pokud je dana pozice napadena
     private boolean isSquareAttacked(int row, int col, boolean byWhite) {
         for (int r = 0; r < 8; r++) {

@@ -17,6 +17,7 @@ public class SquarePanel extends JPanel {
         repaint();
     }
 
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
