@@ -273,19 +273,27 @@ public class ChessBoardPanel extends JPanel {
     // Kontroluje jestli hra skoncila s matem nebo patem
     private void checkEndGame() {
         SpecialMoves special = new SpecialMoves(board, whiteToMove, enPassantRow, enPassantCol);
+        boolean isCheck = special.isKingInCheck(whiteToMove);
+        boolean noMoves = special.hasNoLegalMoves(whiteToMove);
 
-        if (special.isKingInCheck(whiteToMove)) {
-            if (special.hasNoLegalMoves(whiteToMove)) {
-                JOptionPane.showMessageDialog(this, "Checkmate! " + (whiteToMove ? "Black" : "White") + " wins.");
-                System.exit(0);
-            } else {
-                JOptionPane.showMessageDialog(this, "Check!");
-            }
-        } else {
-            if (special.hasNoLegalMoves(whiteToMove)) {
-                JOptionPane.showMessageDialog(this, "Stalemate! It's a draw.");
-                System.exit(0);
-            }
+        if ((isCheck || !isCheck) && noMoves) {
+            String result = isCheck ? (whiteToMove ? "Black wins" : "White wins") : "Draw";
+
+            Timer.stopStatic();
+            SaveGame.saveToHistory(result, gameLog);
+            JOptionPane.showMessageDialog(this, result);
+
+            SaveGame.showStatsAfterGame();
+
+            SwingUtilities.getWindowAncestor(this).dispose();
+            MainMenu.show();
+        } else if (isCheck) {
+            JOptionPane.showMessageDialog(this, "Check!");
         }
     }
+
+
+
+
+
 }

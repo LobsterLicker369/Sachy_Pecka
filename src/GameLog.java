@@ -59,4 +59,9 @@ public class GameLog extends JPanel {
         logArea.setText("");
         moveNumber = 1;
     }
+
+    public String getAllMoves() {
+        return logArea.getText();
+    }
+
 }
