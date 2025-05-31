@@ -21,7 +21,11 @@ public class GameLog extends JPanel {
         logArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(logArea);
         add(scrollPane, BorderLayout.CENTER);
+
+        moveNumber = 1;
     }
+
+
 
     /**
      * Registers a new move in the game log.
@@ -89,6 +93,7 @@ public class GameLog extends JPanel {
         moveNumber = 1;
         moves.clear();
     }
+
 
     /**
      * Returns all recorded moves as a single string, separated by new lines.
@@ -164,16 +169,25 @@ public class GameLog extends JPanel {
      * @param notation algebraic notation string to add
      */
     public void addNotationDirectly(String notation) {
-        if (notation.matches("^\\d+\\.\\s.*")) {
-            moves.add(notation);
-            moveNumber++;
+        if (moves.isEmpty()) {
+
+            moves.add("1. " + notation);
         } else {
-            if (moves.isEmpty()) return;
-            String last = moves.remove(moves.size() - 1);
-            moves.add(last + " , " + notation);
+            String last = moves.get(moves.size() - 1);
+            if (last.contains(",")) {
+
+                int moveNumber = moves.size() + 1;
+                moves.add(moveNumber + ". " + notation);
+            } else {
+
+                moves.set(moves.size() - 1, last + " , " + notation);
+            }
         }
         updateText();
     }
+
+
+
 
 
 }

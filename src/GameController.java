@@ -55,12 +55,14 @@ public class GameController {
             history.remove(history.size() - 1);
             moveNotations.remove(moveNotations.size() - 1);
         }
+
         history.add(SpecialMoves.copyBoard(board.getBoard()));
         historyIndex++;
 
         boolean whiteToMove = historyIndex % 2 == 0;
         DrawRules.recordPosition(board.getBoard(), whiteToMove);
     }
+
 
     /**
      * Reverts the last move if possible.
@@ -80,22 +82,48 @@ public class GameController {
     /**
      * Reapplies a previously undone move if possible.
      */
+
+
     public void redo() {
         if (historyIndex < history.size() - 1) {
-            loggingEnabled = false;
             historyIndex++;
-            board.setBoard(SpecialMoves.copyBoard(history.get(historyIndex)));
+
+            String[][] current = SpecialMoves.copyBoard(history.get(historyIndex));
+            String[][] previous = history.get(historyIndex - 1);
+
+            board.setBoard(current);
             board.switchPlayer();
             board.redraw();
 
-            if (historyIndex < moveNotations.size()) {
-                String notation = moveNotations.get(historyIndex);
-                gameLog.addNotationDirectly(notation);
+            if (gameLog != null) {
+                // Zjisti tah ze změny boardu (from-to)
+                for (int r1 = 0; r1 < 8; r1++) {
+                    for (int c1 = 0; c1 < 8; c1++) {
+                        String fromPiece = previous[r1][c1];
+                        String toPiece = current[r1][c1];
+                        if (fromPiece != null && toPiece == null) {
+                            for (int r2 = 0; r2 < 8; r2++) {
+                                for (int c2 = 0; c2 < 8; c2++) {
+                                    if (previous[r2][c2] == null && fromPiece.equals(current[r2][c2])) {
+                                        String captured = previous[r2][c2];
+                                        String notation = gameLog.getLastNotationPreview(r1, c1, r2, c2, fromPiece, captured, current, historyIndex % 2 == 0);
+                                        gameLog.addNotationDirectly(notation);
+                                        saveNotation(notation);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-
-            loggingEnabled = true;
         }
     }
+
+
+
+
+
 
     /**
      * Saves a move notation to the notation history.
@@ -103,11 +131,18 @@ public class GameController {
      * @param notation the algebraic notation of the move
      */
     public void saveNotation(String notation) {
-        while (moveNotations.size() > historyIndex) {
+
+        int notationIndex = historyIndex - 1;
+
+        while (moveNotations.size() > notationIndex) {
             moveNotations.remove(moveNotations.size() - 1);
         }
-        moveNotations.add(notation);
+
+        if (notationIndex >= 0) {
+            moveNotations.add(notation);
+        }
     }
+
 
     /**
      * Returns the index of the current board state in the history.
