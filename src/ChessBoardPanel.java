@@ -5,6 +5,9 @@ import java.awt.event.MouseEvent;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Panel representing the graphical chessboard.
+ */
 public class ChessBoardPanel extends JPanel {
 
     private final int rows = 9;
@@ -20,7 +23,12 @@ public class ChessBoardPanel extends JPanel {
     private int enPassantRow = -1;
     private int enPassantCol = -1;
     private GameLog gameLog;
+    private Color boardOverlay = null;
 
+    /**
+     * Constructor for ChessBoardPanel.
+     * @param gameLog game log to store move history
+     */
     public ChessBoardPanel(GameLog gameLog) {
         this.gameLog = gameLog;
         setLayout(new GridLayout(rows, cols));
@@ -28,7 +36,9 @@ public class ChessBoardPanel extends JPanel {
         drawBoard();
     }
 
-    // Inicializuje startovni postaveni figur
+    /**
+     * Initializes the board with starting positions of all pieces.
+     */
     private void initBoard() {
         for (int r = 0; r < 8; r++)
             for (int c = 0; c < 8; c++)
@@ -39,21 +49,39 @@ public class ChessBoardPanel extends JPanel {
             board[6][c] = "P";
         }
 
-        board[0][0] = "r"; board[0][1] = "n"; board[0][2] = "b"; board[0][3] = "q";
-        board[0][4] = "k"; board[0][5] = "b"; board[0][6] = "n"; board[0][7] = "r";
+        board[0][0] = "r";
+        board[0][1] = "n";
+        board[0][2] = "b";
+        board[0][3] = "q";
+        board[0][4] = "k";
+        board[0][5] = "b";
+        board[0][6] = "n";
+        board[0][7] = "r";
 
-        board[7][0] = "R"; board[7][1] = "N"; board[7][2] = "B"; board[7][3] = "Q";
-        board[7][4] = "K"; board[7][5] = "B"; board[7][6] = "N"; board[7][7] = "R";
+        board[7][0] = "R";
+        board[7][1] = "N";
+        board[7][2] = "B";
+        board[7][3] = "Q";
+        board[7][4] = "K";
+        board[7][5] = "B";
+        board[7][6] = "N";
+        board[7][7] = "R";
     }
 
-    // Vytvari graficky popisek pro souradnici
+    /**
+     * Creates a coordinate label for row or column.
+     * @param text label text
+     * @return JLabel for coordinate
+     */
     private JLabel createCoordLabel(String text) {
         JLabel label = new JLabel(text, SwingConstants.CENTER);
         label.setFont(new Font("SansSerif", Font.BOLD, 14));
         return label;
     }
 
-    // Zobrazuje sachovnici a vykresluje figurky a legalni tahy
+    /**
+     * Draws the chessboard including pieces and highlights.
+     */
     private void drawBoard() {
         removeAll();
 
@@ -82,6 +110,11 @@ public class ChessBoardPanel extends JPanel {
 
                     square.setLegalMove(legalMoves.contains(new Point(boardRow, boardCol)));
 
+                    if (MoveAnimations.isLastMoveSquare(boardRow, boardCol))
+                        square.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 3));
+                    if (MoveAnimations.isCheckHighlight(boardRow, boardCol))
+                        square.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+
                     square.addMouseListener(new MouseAdapter() {
                         @Override
                         public void mouseClicked(MouseEvent e) {
@@ -93,15 +126,21 @@ public class ChessBoardPanel extends JPanel {
                 }
             }
         }
+        if (boardOverlay != null) setBackground(boardOverlay);
+        else setBackground(null);
 
         revalidate();
         repaint();
     }
 
-    // Vraci unicode znak podle typu figurky
+    /**
+     * Returns the corresponding Unicode symbol for a piece.
+     * @param piece piece code
+     * @return Unicode symbol
+     */
     private String pieceToUnicode(String piece) {
         if (piece == null) return "";
-        return switch(piece) {
+        return switch (piece) {
             case "K" -> "♔";
             case "Q" -> "♕";
             case "R" -> "♖";
@@ -118,7 +157,11 @@ public class ChessBoardPanel extends JPanel {
         };
     }
 
-    // Zpracovava kliknuti na pole
+    /**
+     * Handles a mouse click on a square.
+     * @param row clicked row
+     * @param col clicked column
+     */
     private void handleClick(int row, int col) {
         String piece = board[row][col];
         if (selectedRow == -1) {
@@ -134,7 +177,7 @@ public class ChessBoardPanel extends JPanel {
                     whiteToMove = !whiteToMove;
                     checkEndGame();
                 } else {
-                    JOptionPane.showMessageDialog(this, "Nelze provést tah, král by byl v šachu!");
+                    JOptionPane.showMessageDialog(this, "Illegal move, king would be in check!");
                 }
             }
             selectedRow = -1;
@@ -144,18 +187,24 @@ public class ChessBoardPanel extends JPanel {
         drawBoard();
     }
 
-    // Vraci true pokud je figurka bila
+    /**
+     * Checks if a piece is white.
+     * @param piece piece code
+     * @return true if white, false otherwise
+     */
     private boolean isWhite(String piece) {
         if (piece == null) return false;
         return piece.equals(piece.toUpperCase());
     }
 
-    // Zkousi provest tah a overuje jestli nezpusobi sach
+    /**
+     * Tries to make a move, checking for legality.
+     * @return true if move is legal
+     */
     private boolean tryMakeMove(int fromRow, int fromCol, int toRow, int toCol) {
         String movingPiece = board[fromRow][fromCol];
 
         String[][] boardCopy = SpecialMoves.copyBoard(board);
-
         int enPassantRowCopy = enPassantRow;
         int enPassantColCopy = enPassantCol;
 
@@ -183,37 +232,30 @@ public class ChessBoardPanel extends JPanel {
         boardCopy[fromRow][fromCol] = null;
 
         SpecialMoves special = new SpecialMoves(boardCopy, whiteToMove, enPassantRowCopy, enPassantColCopy);
-        if (special.isKingInCheck(whiteToMove)) {
-            return false;
-        }
+        if (special.isKingInCheck(whiteToMove)) return false;
 
         makeMove(fromRow, fromCol, toRow, toCol);
 
-        if (movingPiece.equals("P") && toRow == 0) {
-            promotePawn(toRow, toCol, true);
-        } else if (movingPiece.equals("p") && toRow == 7) {
-            promotePawn(toRow, toCol, false);
-        }
+        if (movingPiece.equals("P") && toRow == 0) promotePawn(toRow, toCol, true);
+        else if (movingPiece.equals("p") && toRow == 7) promotePawn(toRow, toCol, false);
 
         return true;
     }
 
-    // Provadi tah na desce a aktualizuje en passant
+    /**
+     * Makes a move on the board and updates state.
+     */
     private void makeMove(int fromRow, int fromCol, int toRow, int toCol) {
         String movingPiece = board[fromRow][fromCol];
-
-        // Zachytime co tam bylo drive, nez se to prepise
         String capturedPiece = board[toRow][toCol];
 
-        if (movingPiece.equalsIgnoreCase("p")) {
-            if (toRow == enPassantRow && toCol == enPassantCol) {
-                if (movingPiece.equals("P")) {
-                    capturedPiece = board[toRow + 1][toCol];
-                    board[toRow + 1][toCol] = null;
-                } else {
-                    capturedPiece = board[toRow - 1][toCol];
-                    board[toRow - 1][toCol] = null;
-                }
+        if (movingPiece.equalsIgnoreCase("p") && toRow == enPassantRow && toCol == enPassantCol) {
+            if (movingPiece.equals("P")) {
+                capturedPiece = board[toRow + 1][toCol];
+                board[toRow + 1][toCol] = null;
+            } else {
+                capturedPiece = board[toRow - 1][toCol];
+                board[toRow - 1][toCol] = null;
             }
         }
 
@@ -231,25 +273,33 @@ public class ChessBoardPanel extends JPanel {
         board[toRow][toCol] = movingPiece;
         board[fromRow][fromCol] = null;
 
-        if (gameLog != null) {
+        GameController.getInstance().saveState();
+        if (gameLog != null && GameController.getInstance().isLoggingEnabled()) {
+            String notation = gameLog.getLastNotationPreview(fromRow, fromCol, toRow, toCol, movingPiece, capturedPiece, board, whiteToMove);
+            GameController.getInstance().saveNotation(notation);
             gameLog.registerMove(fromRow, fromCol, toRow, toCol, movingPiece, capturedPiece, board, whiteToMove);
         }
+        MoveAnimations.saveLastMove(fromRow, fromCol, toRow, toCol);
+        SpecialMoves sm = new SpecialMoves(board, whiteToMove, enPassantRow, enPassantCol);
+        if (sm.isKingInCheck(!whiteToMove)) {
+            Point k = sm.findKingPublic(!whiteToMove), a = sm.findAttackerTo(k, whiteToMove);
+            MoveAnimations.setCheckHighlight(k, a);
+        } else MoveAnimations.clearCheckHighlight();
+        boolean pawn = movingPiece.equalsIgnoreCase("p");
+        boolean captured = capturedPiece != null;
+        DrawRules.updateHalfmoveClock(pawn, captured);
+        DrawRules.recordPosition(board, whiteToMove);
+
     }
 
-
-    // Provadi promocni volbu pesce
+    /**
+     * Promotes a pawn to the selected piece.
+     */
     private void promotePawn(int row, int col, boolean white) {
         String[] options = {"Queen", "Rook", "Bishop", "Knight"};
-        String choice = (String) JOptionPane.showInputDialog(this,
-                "Promote pawn to:",
-                "Pawn Promotion",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                options,
-                options[0]);
-
+        String choice = (String) JOptionPane.showInputDialog(this, "Promote pawn to:", "Pawn Promotion",
+                JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
         if (choice == null) choice = "Queen";
-
         String promotedPiece = switch (choice) {
             case "Queen" -> white ? "Q" : "q";
             case "Rook" -> white ? "R" : "r";
@@ -257,11 +307,13 @@ public class ChessBoardPanel extends JPanel {
             case "Knight" -> white ? "N" : "n";
             default -> white ? "Q" : "q";
         };
-
         board[row][col] = promotedPiece;
     }
 
-    // Vraci mnozinu legalnich tahu pro zvolenou figurku
+    /**
+     * Calculates legal moves for the selected piece.
+     * @return set of legal move points
+     */
     private Set<Point> calculateLegalMoves(int row, int col) {
         String piece = board[row][col];
         if (piece == null) return new HashSet<>();
@@ -269,31 +321,56 @@ public class ChessBoardPanel extends JPanel {
         return special.getLegalMoves(row, col);
     }
 
-
-    // Kontroluje jestli hra skoncila s matem nebo patem
+    /**
+     * Checks if the game has ended by checkmate, stalemate or draw.
+     */
     private void checkEndGame() {
         SpecialMoves special = new SpecialMoves(board, whiteToMove, enPassantRow, enPassantCol);
         boolean isCheck = special.isKingInCheck(whiteToMove);
         boolean noMoves = special.hasNoLegalMoves(whiteToMove);
-
         if ((isCheck || !isCheck) && noMoves) {
             String result = isCheck ? (whiteToMove ? "Black wins" : "White wins") : "Draw";
-
+            boardOverlay = isCheck ? Color.GREEN : Color.BLUE;
             Timer.stopStatic();
             SaveGame.saveToHistory(result, gameLog);
             JOptionPane.showMessageDialog(this, result);
-
             SaveGame.showStatsAfterGame();
-
             SwingUtilities.getWindowAncestor(this).dispose();
             MainMenu.show();
         } else if (isCheck) {
-            JOptionPane.showMessageDialog(this, "Check!");
+            boardOverlay = Color.RED;
+        } else {
+            boardOverlay = null;
+        }
+        if (DrawRules.isThreefoldRepetition(board, whiteToMove) || DrawRules.isFiftyMoveRuleDraw()) {
+
+            boardOverlay = Color.BLUE;
+            Timer.stopStatic();
+            SaveGame.saveToHistory("Draw", gameLog);
+            JOptionPane.showMessageDialog(this, "Draw: repetition or 50 moves.");
+            SaveGame.showStatsAfterGame();
+            SwingUtilities.getWindowAncestor(this).dispose();
+            MainMenu.show();
         }
     }
 
+    public String[][] getBoard() {
+        return board;
+    }
 
+    public void setBoard(String[][] newBoard) {
+        this.board = newBoard;
+    }
 
+    public void redraw() {
+        drawBoard();
+    }
 
+    public void switchPlayer() {
+        whiteToMove = !whiteToMove;
+    }
 
+    public GameLog getGameLog() {
+        return gameLog;
+    }
 }

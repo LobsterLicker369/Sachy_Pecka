@@ -1,40 +1,46 @@
-
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * A panel that displays an elapsed timer using Swing.
+ * The timer starts immediately upon construction and updates every 50 milliseconds.
+ */
 public class Timer extends JPanel {
 
-    // Popisek pro zobrazovani casu
+    // Label for displaying the time
     private JLabel timeLabel;
 
-    // Cas odkdy bezi timer
+    // The time when the timer started
     private long startTime;
 
-    // Swingovy timer ktery se spousti pravidelne
+    // A Swing timer that updates periodically
     private javax.swing.Timer swingTimer;
 
     private static Timer instance;
 
+    /**
+     * Constructs the Timer panel and starts the timer.
+     */
     public Timer() {
-        // Rozlozeni panelu
+        // Layout of the panel
         setLayout(new BorderLayout());
 
-        // Vytvori a nastavi textovy label
+        // Create and configure the text label
         timeLabel = new JLabel("00:00:00:000", SwingConstants.CENTER);
         timeLabel.setFont(new Font("Font", Font.BOLD, 20));
         add(timeLabel, BorderLayout.CENTER);
         setPreferredSize(new Dimension(150, 50));
 
-        // Nastavi cas startu a spusti aktualizace kazdych 50 ms
+        // Set the start time and launch updates every 50 ms
         startTime = System.currentTimeMillis();
         swingTimer = new javax.swing.Timer(50, e -> updateTime());
         swingTimer.start();
         instance = this;
-
     }
 
-
-    // Vypocita a zobrazi aktualni cas
+    /**
+     * Calculates and displays the current elapsed time.
+     */
     private void updateTime() {
         long now = System.currentTimeMillis();
         long elapsed = now - startTime;
@@ -48,22 +54,33 @@ public class Timer extends JPanel {
         timeLabel.setText(text);
     }
 
-    // Zastavi timer
+    /**
+     * Stops the timer.
+     */
     public void stop() {
         swingTimer.stop();
     }
 
+    /**
+     * Static method to stop the current timer instance.
+     */
     public static void stopStatic() {
         if (instance != null) {
             instance.stop();
         }
     }
 
-    // Restartuje timer
+    /**
+     * Resets the timer to the current system time.
+     */
     public void reset() {
         startTime = System.currentTimeMillis();
     }
 
+    /**
+     * Returns the formatted elapsed time since static start time.
+     * @return A string in format HH:mm:ss:SSS
+     */
     public static String getFormattedTime() {
         long now = System.currentTimeMillis();
         long elapsed = now - startTimeStatic;
@@ -76,7 +93,6 @@ public class Timer extends JPanel {
         return String.format("%02d:%02d:%02d:%03d", hours, minutes, seconds, millis);
     }
 
+    // Static start time for use with getFormattedTime
     private static long startTimeStatic = System.currentTimeMillis();
-
 }
-

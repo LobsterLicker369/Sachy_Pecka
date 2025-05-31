@@ -2,6 +2,9 @@ import java.awt.Point;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Handles special chess rules like castling, en passant, and check detection.
+ */
 public class SpecialMoves {
     private String[][] board;
     private boolean whiteToMove;
@@ -15,7 +18,9 @@ public class SpecialMoves {
         this.enPassantCol = enPassantCol;
     }
 
-    // Kopiruje sachovnici do noveho pole
+    /**
+     * Returns a deep copy of the given board.
+     */
     public static String[][] copyBoard(String[][] source) {
         String[][] copy = new String[8][8];
         for (int i = 0; i < 8; i++)
@@ -23,10 +28,12 @@ public class SpecialMoves {
         return copy;
     }
 
-    // Vraci true pokud je kral dane barvy v sachu
+    /**
+     * Returns true if the king of the given color is in check.
+     */
     public boolean isKingInCheck(boolean white) {
         Point kingPos = findKing(white);
-        if (kingPos == null) return true; // No king means checkmate
+        if (kingPos == null) return true; // No king found, consider it checkmate
 
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
@@ -43,7 +50,9 @@ public class SpecialMoves {
         return false;
     }
 
-    // Vraci true pokud hrac nema zadny legalni tah
+    /**
+     * Returns true if the current player has no legal moves.
+     */
     public boolean hasNoLegalMoves(boolean white) {
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
@@ -57,7 +66,9 @@ public class SpecialMoves {
         return true;
     }
 
-    // Vraci mnozinu legalnich tahu pro figurku na dane pozici
+    /**
+     * Returns the set of legal moves for the piece at the given position.
+     */
     public Set<Point> getLegalMoves(int row, int col) {
         Set<Point> legal = new HashSet<>();
         String piece = board[row][col];
@@ -71,8 +82,8 @@ public class SpecialMoves {
             boardCopy[target.x][target.y] = piece;
             boardCopy[row][col] = null;
 
-            SpecialMoves specialCopy = new SpecialMoves(boardCopy, whiteToMove, enPassantRow, enPassantCol);
-            if (!specialCopy.isKingInCheck(whiteToMove)) {
+            SpecialMoves test = new SpecialMoves(boardCopy, whiteToMove, enPassantRow, enPassantCol);
+            if (!test.isKingInCheck(whiteToMove)) {
                 legal.add(target);
             }
         }
@@ -80,17 +91,18 @@ public class SpecialMoves {
         return legal;
     }
 
-    // Vraci vsechny pseudolegalni tahy figurky bez ohledu na sachu
+    /**
+     * Returns all pseudo-legal moves (ignoring checks) for the piece at the given position.
+     */
     private Set<Point> getPseudoLegalMoves(int row, int col, boolean includeSpecial) {
         Set<Point> moves = new HashSet<>();
         String piece = board[row][col];
         if (piece == null) return moves;
         boolean white = isWhite(piece);
-
         int dir = white ? -1 : 1;
 
         switch (piece.toLowerCase()) {
-            case "p" -> {
+            case "p" -> { // Pawn
                 int nextRow = row + dir;
                 if (inBounds(nextRow, col) && board[nextRow][col] == null) {
                     moves.add(new Point(nextRow, col));
@@ -112,7 +124,7 @@ public class SpecialMoves {
                     }
                 }
             }
-            case "n" -> {
+            case "n" -> { // Knight
                 int[][] knightMoves = {{-2,-1}, {-2,1}, {-1,-2}, {-1,2}, {1,-2}, {1,2}, {2,-1}, {2,1}};
                 for (int[] m : knightMoves) {
                     int nr = row + m[0];
@@ -122,16 +134,10 @@ public class SpecialMoves {
                     }
                 }
             }
-            case "b" -> {
-                moves.addAll(slidingMoves(row, col, white, new int[][]{{1,1}, {1,-1}, {-1,1}, {-1,-1}}));
-            }
-            case "r" -> {
-                moves.addAll(slidingMoves(row, col, white, new int[][]{{1,0}, {-1,0}, {0,1}, {0,-1}}));
-            }
-            case "q" -> {
-                moves.addAll(slidingMoves(row, col, white, new int[][]{{1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1}}));
-            }
-            case "k" -> {
+            case "b" -> moves.addAll(slidingMoves(row, col, white, new int[][]{{1,1}, {1,-1}, {-1,1}, {-1,-1}})); // Bishop
+            case "r" -> moves.addAll(slidingMoves(row, col, white, new int[][]{{1,0}, {-1,0}, {0,1}, {0,-1}})); // Rook
+            case "q" -> moves.addAll(slidingMoves(row, col, white, new int[][]{{1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1}})); // Queen
+            case "k" -> { // King
                 for (int dr = -1; dr <= 1; dr++) {
                     for (int dc = -1; dc <= 1; dc++) {
                         if (dr == 0 && dc == 0) continue;
@@ -143,31 +149,30 @@ public class SpecialMoves {
                     }
                 }
 
+                // Castling
                 if (includeSpecial) {
-                    // bila rosada
                     if (white && row == 7 && col == 4) {
-                        // King side
+                        // White king-side
                         if ("R".equals(board[7][7]) &&
                                 board[7][5] == null && board[7][6] == null &&
                                 !isKingInCheck(true) &&
                                 !isSquareAttacked(7, 5, false) &&
                                 !isSquareAttacked(7, 6, false)) {
-                            moves.add(new Point(7, 6)); // rošáda doprava
+                            moves.add(new Point(7, 6));
                         }
 
-                        // Queen side
+                        // White queen-side
                         if ("R".equals(board[7][0]) &&
                                 board[7][1] == null && board[7][2] == null && board[7][3] == null &&
                                 !isKingInCheck(true) &&
                                 !isSquareAttacked(7, 3, false) &&
                                 !isSquareAttacked(7, 2, false)) {
-                            moves.add(new Point(7, 2)); // rošáda doleva
+                            moves.add(new Point(7, 2));
                         }
                     }
 
-                    // cerna rosada
                     if (!white && row == 0 && col == 4) {
-                        // King side
+                        // Black king-side
                         if ("r".equals(board[0][7]) &&
                                 board[0][5] == null && board[0][6] == null &&
                                 !isKingInCheck(false) &&
@@ -176,7 +181,7 @@ public class SpecialMoves {
                             moves.add(new Point(0, 6));
                         }
 
-                        // queen side
+                        // Black queen-side
                         if ("r".equals(board[0][0]) &&
                                 board[0][1] == null && board[0][2] == null && board[0][3] == null &&
                                 !isKingInCheck(false) &&
@@ -187,13 +192,14 @@ public class SpecialMoves {
                     }
                 }
             }
-
         }
 
         return moves;
     }
 
-    // Vraci pohyby pro tahove figurky jako vez strelec dama
+    /**
+     * Returns valid moves for sliding pieces like rook, bishop, queen.
+     */
     private Set<Point> slidingMoves(int row, int col, boolean white, int[][] directions) {
         Set<Point> moves = new HashSet<>();
         for (int[] d : directions) {
@@ -215,7 +221,9 @@ public class SpecialMoves {
         return moves;
     }
 
-    // Vraci pozici krale dane barvy
+    /**
+     * Finds the position of the king of the given color.
+     */
     private Point findKing(boolean white) {
         String king = white ? "K" : "k";
         for (int r = 0; r < 8; r++)
@@ -225,18 +233,23 @@ public class SpecialMoves {
         return null;
     }
 
-    // Vraci true pokud je dana pozice v rozsahu desky
+    /**
+     * Checks if the given coordinates are on the board.
+     */
     private boolean inBounds(int r, int c) {
         return r >= 0 && r < 8 && c >= 0 && c < 8;
     }
 
-    // Vraci true pokud je figurka bila
+    /**
+     * Returns true if the given piece is white.
+     */
     private boolean isWhite(String piece) {
-        if (piece == null) return false;
-        return piece.equals(piece.toUpperCase());
+        return piece != null && piece.equals(piece.toUpperCase());
     }
 
-    // Vraci true pokud je dana pozice napadena
+    /**
+     * Returns true if the given square is attacked by the specified side.
+     */
     private boolean isSquareAttacked(int row, int col, boolean byWhite) {
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
@@ -252,6 +265,25 @@ public class SpecialMoves {
         return false;
     }
 
+    /**
+     * Public version of findKing for external access.
+     */
+    public Point findKingPublic(boolean white) {
+        return findKing(white);
+    }
 
-
+    /**
+     * Finds the piece attacking the given king position.
+     */
+    public Point findAttackerTo(Point kingPos, boolean attackerWhite) {
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                String piece = board[r][c];
+                if (piece == null || isWhite(piece) != attackerWhite) continue;
+                Set<Point> moves = getPseudoLegalMoves(r, c, false);
+                if (moves.contains(kingPos)) return new Point(r, c);
+            }
+        }
+        return null;
+    }
 }

@@ -6,10 +6,18 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Utility class to save and display game history statistics.
+ */
 public class SaveGame {
 
     private static final String HISTORY_FILE = "history.txt";
-    //savene staty hry
+
+    /**
+     * Saves the game result, duration, and moves to the history file.
+     * @param result the game result string (e.g., "White wins", "Draw")
+     * @param gameLog the GameLog instance containing moves notation
+     */
     public static void saveToHistory(String result, GameLog gameLog) {
         try (FileWriter writer = new FileWriter(HISTORY_FILE, true)) {
             writer.write("=== Game " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + " ===\n");
@@ -20,7 +28,11 @@ public class SaveGame {
             JOptionPane.showMessageDialog(null, "Failed to save game history.");
         }
     }
-    //ukaze staty hry
+
+    /**
+     * Displays overall statistics based on saved game history,
+     * showing number of White wins, Black wins, and Draws.
+     */
     public static void showStatsAfterGame() {
         int whiteWins = 0, blackWins = 0, draws = 0;
 
@@ -34,15 +46,15 @@ public class SaveGame {
                 else if (game.contains("Result: Draw")) draws++;
             }
 
-            String message = "📊 Celkové skóre:\n"
-                    + "Bílé výhry: " + whiteWins + "\n"
-                    + "Černé výhry: " + blackWins + "\n"
-                    + "Remízy: " + draws;
+            String message = "📊 Overall score:\n"
+                    + "White wins: " + whiteWins + "\n"
+                    + "Black wins: " + blackWins + "\n"
+                    + "Draws: " + draws;
 
-            JOptionPane.showMessageDialog(null, message, "Skóre", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message, "Score", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Nelze načíst historii pro statistiky.");
+            JOptionPane.showMessageDialog(null, "Cannot load history for statistics.");
         }
     }
 }
